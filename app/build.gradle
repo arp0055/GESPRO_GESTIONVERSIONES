@@ -15,43 +15,23 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
  */
-
 apply plugin: 'com.android.application'
 apply plugin: 'jacoco-android'
 apply plugin: 'realm-android'
 apply plugin: 'io.fabric'
-
+apply plugin: 'com.github.triplet.play'
 // App version
 ext.versionMajor = 1 // API Changes, adding big new feature, redesign the App
 ext.versionMinor = 2 // New features in a backwards-compatible manner
 ext.versionPatch = 0 // Backwards-compatible bug fixes
 ext.versionClassifier = null // Pre-releases (alpha, beta, rc, SNAPSHOT...)
-
 // Get signing config
 def keystorePropertiesFile = rootProject.file("secrets/keystore.properties")
 def keystoreProperties = new Properties()
 keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
-
 android {
-
     compileSdkVersion 26
     buildToolsVersion '26.0.1'
-
-    defaultConfig {
-        applicationId "com.davidmiguel.gobees"
-        minSdkVersion 19
-        targetSdkVersion 26
-        versionCode generateVersionCode()
-        versionName generateVersionName()
-        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
-        manifestPlaceholders = [
-                crashlyticsKey: keystoreProperties['CrashlyticsKey']
-        ]
-        buildConfigField 'String', 'COMMIT_HASH', "\"${getCommitHash()}\""
-        buildConfigField 'String', 'BUILD_DATE', "\"${getBuildDate()}\""
-        buildConfigField 'String', 'OPEN_WEATHER_MAP_API_KEY', keystoreProperties['OpenWeatherMapApiKey']
-    }
-
     signingConfigs {
         debug {
             keyAlias keystoreProperties['keyAliasDebug']
@@ -66,7 +46,32 @@ android {
             keyPassword keystoreProperties['keyPasswordRelease']
         }
     }
-
+playAccountConfigs {
+        defaultAccountConfig {
+            serviceAccountEmail = keystoreProperties['serviceAccountEmail']
+            jsonFile = file(keystoreProperties['googlePlayKey'])
+        }
+    }
+    play {
+        track = 'beta'
+    }
+    defaultConfig {
+        applicationId "com.davidmiguel.gobees"
+        minSdkVersion 19
+        targetSdkVersion 26
+		
+        versionCode generateVersionCode()
+        versionName generateVersionName()
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+		
+        manifestPlaceholders = [
+                crashlyticsKey: keystoreProperties['CrashlyticsKey']
+        ]
+        buildConfigField 'String', 'COMMIT_HASH', "\"${getCommitHash()}\""
+        buildConfigField 'String', 'BUILD_DATE', "\"${getBuildDate()}\""
+        buildConfigField 'String', 'OPEN_WEATHER_MAP_API_KEY', keystoreProperties['OpenWeatherMapApiKey']
+        playAccountConfig = playAccountConfigs.defaultAccountConfig
+    }
     buildTypes {
         debug {
             testCoverageEnabled true
@@ -90,7 +95,6 @@ android {
             signingConfig signingConfigs.relase
         }
     }
-
     productFlavors {
         // Mock: mock data layer
         mock {
@@ -108,50 +112,41 @@ android {
             resValue('string', 'app_name', getAppName())
         }
     }
-
     // Remove mockRelease as it's not needed.
     android.variantFilter { variant ->
         if (variant.buildType.name == 'release' && variant.getFlavors().get(0).name == 'mock') {
             variant.setIgnore(true);
         }
     }
-
     // android.jar methods return either null or zero, not throw exceptions
     testOptions {
         unitTests.returnDefaultValues = true
     }
-
     // Always show the result of every unit test, even if it passes
     testOptions.unitTests.all {
         testLogging {
             events 'passed', 'skipped', 'failed', 'standardOut', 'standardError'
         }
     }
-
     // Explicitly tells Gradle which version shall be compiled (due to Espresso conflicts)
     configurations.all {
         resolutionStrategy.force 'com.google.code.findbugs:jsr305:3.0.2'
     }
-
     // Lint checks
     lintOptions {
         abortOnError false
         disable 'SetJavaScriptEnabled', 'MissingTranslation'
     }
 }
-
 sourceSets {
     test {
         java.srcDirs = ['src/test/res']
     }
 }
-
 dependencies {
-
     //----------------------------------------------------------------------------------------------
     // App Dependencies
     //----------------------------------------------------------------------------------------------
-
     // Support libraries : https://developer.android.com/topic/libraries/support-library/packages.html
     compile 'com.android.support:support-fragment:26.1.0'
     compile 'com.android.support:support-core-utils:26.1.0'
@@ -176,22 +171,18 @@ dependencies {
     compile 'com.vanniktech:vntnumberpickerpreference:1.0.6'
     // Permission Utils (check runtime permissions) : https://github.com/rebus007/PermissionUtils
     compile 'rebus:permission-utils:2.0.1'
-
     //----------------------------------------------------------------------------------------------
     // Debugging / logging dependencies
     //----------------------------------------------------------------------------------------------
-
     // Timber (logger) : https://github.com/JakeWharton/timber
     compile 'com.jakewharton.timber:timber:4.5.1'
     // Crashlytics (Crash reporting) : https://docs.fabric.io/android/changelog.html#crashlytics
     compile('com.crashlytics.sdk.android:crashlytics:2.6.8@aar') {
         transitive = true;
     }
-
     //----------------------------------------------------------------------------------------------
     // Testing Dependencies
     //----------------------------------------------------------------------------------------------
-
     // JUnit (unit testing framework) : http://junit.org/junit4/
     testCompile 'junit:junit:4.12'
     // Mockito (mocking framework) : http://site.mockito.org/
@@ -217,7 +208,6 @@ dependencies {
     androidTestCompile 'com.android.support:support-annotations:26.1.0'
 	androidTestCompile 'com.android.support:support-annotations:26.1.0'
 }
-
 /*
 All direct/transitive dependencies shared between your test and production APKs need to be
 excluded from the test APK! This is necessary because both APKs will contain the same classes. Not
@@ -230,7 +220,6 @@ configurations.compile.dependencies.each { compileDependency ->
         configurations.androidTestCompile.exclude module: "${compileDependency.getName()}"
     }
 }
-
 /*
 Copy test resources directory (test/mock/debug).
 */
@@ -238,14 +227,12 @@ task copyResDirectoryToTestMockDebugClasses(type: Copy) {
     from "${projectDir}/src/testMock/res"
     into "${buildDir}/intermediates/classes/test/mock/debug/res"
 }
-
 /*
 Run copy test resources directory tasks before build.
 */
 afterEvaluate {
     preBuild.dependsOn(copyResDirectoryToTestMockDebugClasses)
 }
-
 /*
 SonarQube configuration.
 */
@@ -263,16 +250,12 @@ sonarqube {
         property "sonar.jacoco.reportMissing.force.zero", true
     }
 }
-
-
 /**
-
  * Returns the number of the current build in Travis.
  */
 private static Integer getBuildNumber() {
-    return System.getenv()["TRAVIS_BUILD_NUMBER"] as Integer ?: 0
+    return System.getenv()["TRAVIS_BUILD_NUMBER"] as Integer ?: 1
 }
-
 /**
  * Version code: MMMmmppbbb
  */ 
@@ -284,7 +267,6 @@ private Integer generateVersionCode() {
     println "Version code: " + versionCode
     return versionCode
 }
-
 /**
  * Version name: <major>.<minor>.<patch>
  * For mock, dev, tst and acc <build> is attached at the end. 
@@ -297,6 +279,3 @@ private String generateVersionName() {
     println "Version name: " + versionName
     return versionName;
 }
-
-
- 
