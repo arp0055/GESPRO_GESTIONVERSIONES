@@ -46,7 +46,7 @@ android {
             keyPassword keystoreProperties['keyPasswordRelease']
         }
     }
-playAccountConfigs {
+    playAccountConfigs {
         defaultAccountConfig {
             serviceAccountEmail = keystoreProperties['serviceAccountEmail']
             jsonFile = file(keystoreProperties['googlePlayKey'])
@@ -59,11 +59,9 @@ playAccountConfigs {
         applicationId "com.davidmiguel.gobees"
         minSdkVersion 19
         targetSdkVersion 26
-		
         versionCode generateVersionCode()
         versionName generateVersionName()
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
-		
         manifestPlaceholders = [
                 crashlyticsKey: keystoreProperties['CrashlyticsKey']
         ]
@@ -157,7 +155,7 @@ dependencies {
     compile 'com.android.support:design:26.1.0'
     // Google Location and Activity Recognition : https://developers.google.com/android/guides/setup
     compile 'com.google.android.gms:play-services-location:11.4.0'
-	// Firebase Analytics : https://firebase.google.com/docs/android/setup#available_libraries
+    // Firebase Analytics : https://firebase.google.com/docs/android/setup#available_libraries
     compile 'com.google.firebase:firebase-core:11.4.0'
     // OpenCV (computer vision) : https://github.com/davidmigloz/opencv-android-gradle-repo/
     compile 'com.github.davidmigloz:opencv-android-gradle-repo:3.2.0'
@@ -168,7 +166,7 @@ dependencies {
     // MPAndroidChart (chart view / graph view) : https://github.com/PhilJay/MPAndroidChart
     compile 'com.github.PhilJay:MPAndroidChart:v3.0.2'
     // VNTNumberPickerPreference (NumberPicker Preference) : https://github.com/vanniktech/VNTNumberPickerPreference
-    compile 'com.vanniktech:vntnumberpickerpreference:1.0.6'
+    compile 'com.vanniktech:vntnumberpickerpreference:1.0.0'
     // Permission Utils (check runtime permissions) : https://github.com/rebus007/PermissionUtils
     compile 'rebus:permission-utils:2.0.1'
     //----------------------------------------------------------------------------------------------
@@ -177,7 +175,7 @@ dependencies {
     // Timber (logger) : https://github.com/JakeWharton/timber
     compile 'com.jakewharton.timber:timber:4.5.1'
     // Crashlytics (Crash reporting) : https://docs.fabric.io/android/changelog.html#crashlytics
-    compile('com.crashlytics.sdk.android:crashlytics:2.6.8@aar') {
+    compile('com.crashlytics.sdk.android:crashlytics:2.7.0@aar') {
         transitive = true;
     }
     //----------------------------------------------------------------------------------------------
@@ -205,8 +203,8 @@ dependencies {
     androidTestCompile 'com.android.support.test.espresso:espresso-contrib:2.2.2'
     androidTestCompile 'com.android.support.test.espresso:espresso-intents:2.2.2'
     // Resolve conflicts between main and test APK:
+    androidTestCompile 'com.android.support:support-v4:26.1.0'
     androidTestCompile 'com.android.support:support-annotations:26.1.0'
-	androidTestCompile 'com.android.support:support-annotations:26.1.0'
 }
 /*
 All direct/transitive dependencies shared between your test and production APKs need to be
@@ -258,18 +256,18 @@ private static Integer getBuildNumber() {
 }
 /**
  * Version code: MMMmmppbbb
- */ 
+ */
 private Integer generateVersionCode() {
     Integer versionCode = ext.versionMajor * 10000000 +
             ext.versionMinor * 100000 +
             ext.versionPatch * 1000 +
-            (getBuildNumber() % 1000) 
+            (getBuildNumber() % 1000)
     println "Version code: " + versionCode
     return versionCode
 }
 /**
  * Version name: <major>.<minor>.<patch>
- * For mock, dev, tst and acc <build> is attached at the end. 
+ * For mock, dev, tst and acc <build> is attached at the end.
  */
 private String generateVersionName() {
     String versionName = "${ext.versionMajor}.${ext.versionMinor}.${ext.versionPatch}"
@@ -279,3 +277,22 @@ private String generateVersionName() {
     println "Version name: " + versionName
     return versionName;
 }
+/**
+ * Returns git commit long hash.
+ */
+private String getCommitHash() {
+    return 'git rev-parse HEAD'.execute([], project.rootDir).text.trim();
+}
+/**
+ * Returns build date.
+ */
+private static String getBuildDate() {
+    return new GregorianCalendar().format("yyyy-MM-dd'T'HH:mm.ss'Z'");
+}
+/**
+ * Returns app name.
+ */
+private static String getAppName() {
+    return "GoBees"
+}
+apply plugin: 'com.google.gms.google-services'
